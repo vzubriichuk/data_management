@@ -1,0 +1,11 @@
+.idea
+__pycache__
+build
+dist
+env
+src/gui/resources
+
+access.py
+log.txt
+main.spec
+
