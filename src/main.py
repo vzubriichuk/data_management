@@ -65,7 +65,8 @@ class WelcomeWindow(QtWidgets.QMainWindow, Ui_welcomeWindow):
     def __init__(self):
         super().__init__()
         self.app_filial = appf.FilialApp()
-        self.setupUi(self)  # Это нужно для инициализации нашего дизайна
+        self.setupUi(self)  # Инициализация дизайна
+
         # нужный костыль для вывода иконки на splash screen
         hbox = QHBoxLayout(self)
         hbox.addWidget(self.splash_label)

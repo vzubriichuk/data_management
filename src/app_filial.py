@@ -33,6 +33,7 @@ import getpass
 
 LastStateRole = QtCore.Qt.UserRole
 
+
 class PopupInfoWindows(QWidget):
     def __init__(self):
         super().__init__()
@@ -61,6 +62,16 @@ class PopupInfoWindows(QWidget):
         QMessageBox.information(self, 'Добавление филиалов',
                                 'Выбранные филиалы были успешно добавлены.',
                                 QMessageBox.Ok, QMessageBox.Ok)
+
+    def closeEvent(self, event):
+        reply = QMessageBox.question(self, 'Выход',
+                                     'Вы уверены что хотите выйти?',
+                                     QMessageBox.Yes | QMessageBox.No,
+                                     QMessageBox.No)
+        if reply == QMessageBox.Yes:
+            event.accept()
+        else:
+            event.ignore()
 
 
 # main app
