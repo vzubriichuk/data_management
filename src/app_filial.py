@@ -11,7 +11,7 @@ from PyQt5.QtWidgets import *
 from PyQt5.QtCore import QTimer, Qt
 from PyQt5.Qt import QHBoxLayout
 
-from gui.filial_cp import Ui_MainWindow
+from gui.app_filialControl import Ui_MainWindow
 
 # from pyodbc import Error as SQLError
 from main import sql
@@ -73,8 +73,14 @@ class PopupInfoWindows(QWidget):
         else:
             event.ignore()
 
+class CheckBoxStyle(QtWidgets.QProxyStyle):
+    def subElementRect(self, element, option, widget=None):
+        r = super().subElementRect(element, option, widget)
+        if element == QtWidgets.QStyle.SE_ItemViewItemCheckIndicator:
+            r.moveCenter(option.rect.center())
+        return r
 
-# main app
+
 class FilialApp(QtWidgets.QMainWindow, Ui_MainWindow, PopupInfoWindows):
     def __init__(self):
         super().__init__()
@@ -103,8 +109,19 @@ class FilialApp(QtWidgets.QMainWindow, Ui_MainWindow, PopupInfoWindows):
         self.btn_remove.clicked.connect(self.check_rows_remove)
         self.btn_add.clicked.connect(self.check_rows_add)
 
+    """
+        Функция принимает виджет таблицы и 
+        стилизирует чекбоксы по центру
+    """
+    def checkbox_styling(self):
+        widgets = [self.table_active_filials, self.table_all_filials]
+        for widget in widgets:
+            checkbox_style = CheckBoxStyle(widget.style())
+            widget.setStyle(checkbox_style)
+
     # load info from choosing report
     def load_report(self):
+        self.checkbox_styling()
         for k, v in self.report_list.items():
             if v == self.reports_dropdown.currentText():
                 self.report_id = k

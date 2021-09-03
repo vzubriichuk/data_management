@@ -120,3 +120,49 @@ class DBConnect(object):
             writelog(error)
             status = 0
             return status
+
+    """
+    Блок функций модуля "Управления ролями пользователей в кубах"
+    """
+    def get_users(self):
+        query = '''
+            select [cub.People.peopleLogin], [cub.People.peopleFullName]
+            from [DBMS_S31].[MasterData].[dbo].[dim_Staff] s
+            where 1=1
+            and [cub.Staff.isWork] = 1
+            and [cub.Businesses.topLevelBusinessId] in ( 76,80,88,102,105,113,114,353,421  )
+            and [cub.People.peopleLogin] is not NULL
+        '''
+        self.__cursor.execute(query)
+        return self.__cursor.fetchall()
+
+    def get_user_info(self, UserName):
+        query = '''
+            exec payment.admin_get_user_info @UserName = ?
+        '''
+        self.__cursor.execute(query, UserName)
+        return self.__cursor.fetchone()
+
+    def get_list_cubes(self):
+        query = '''
+            SELECT idParamsLines, ValueDescription
+            FROM  LogisticFinance.dbo.GlobalParamsLines
+            WHERE idParams = 14
+        '''
+        self.__cursor.execute(query)
+        return self.__cursor.fetchall()
+
+    def add_role(self, userLogin, cubeID):
+        query = ''' 
+            exec reporting.md@cube_role_add @userLogin = ?,
+                                            @cubeID = ?
+        '''
+        try:
+            self.__cursor.execute(query, userLogin, cubeID)
+            status = self.__cursor.fetchone()
+            self.__db.commit()
+            return status
+        except pyodbc.ProgrammingError as error:
+            writelog(error)
+            status = 0
+            return status

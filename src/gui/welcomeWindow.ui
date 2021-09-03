@@ -129,7 +129,7 @@
      <string>Отмена</string>
     </property>
    </widget>
-   <widget class="QComboBox" name="apps_dropdown">
+   <widget class="QComboBox" name="welcome_dropdown">
     <property name="geometry">
      <rect>
       <x>70</x>

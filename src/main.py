@@ -16,6 +16,7 @@ from PyQt5.QtWidgets import *
 
 import access
 import app_filial as appf
+import app_cube_role as appc
 from db_connect import DBConnect
 from log_error import writelog
 from singleinstance import Singleinstance
@@ -27,6 +28,17 @@ sql = DBConnect(server=db_info.get('Server'),
                 uid=db_info.get('UID'),
                 pwd=db_info.get('PWD'))
 
+
+
+class Error(Exception):
+    """ Exception raised if error has detected.
+    Attributes:
+        expression - input expression in which the error occurred;
+    """
+
+    def __init__(self, expression):
+        self.expression = expression
+        super().__init__(self.expression)
 
 class RestartRequiredError(Exception):
     """ Exception raised if restart is required.
@@ -65,6 +77,7 @@ class WelcomeWindow(QtWidgets.QMainWindow, Ui_welcomeWindow):
     def __init__(self):
         super().__init__()
         self.app_filial = appf.FilialApp()
+        self.app_cube = appc.CubeRolesApp()
         self.setupUi(self)  # Инициализация дизайна
 
         # нужный костыль для вывода иконки на splash screen
@@ -81,22 +94,26 @@ class WelcomeWindow(QtWidgets.QMainWindow, Ui_welcomeWindow):
             with sql:
                 self.report_list = dict(sql.get_apps())
                 for key, values in self.report_list.items():
-                    self.apps_dropdown.addItem(values)
+                    self.welcome_dropdown.addItem(values)
         except Exception as error:
             writelog(error)
 
     def choose_app(self):
         for k, v in self.report_list.items():
-            if v == self.apps_dropdown.currentText():
+            if v == self.welcome_dropdown.currentText():
                 self.report_id = k
-                if self.report_id == 1:
-                    self.openApp(self.report_id)
+                self.openApp(self.report_id)
 
     def openApp(self, app):
         if app == 1:
             self.hide()
             self.app_filial.show()
             self.app_filial.raise_()
+        elif app == 2:
+            self.hide()
+            self.app_cube.show()
+            self.app_cube.raise_()
+
 
 def welcome_Window():
     splash = QtWidgets.QApplication(sys.argv)
