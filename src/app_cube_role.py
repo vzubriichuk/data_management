@@ -22,8 +22,8 @@ import sys
 import os
 import getpass
 
-server = 's-kv-center-s59'
-db = 'LogisticFinance'
+server = 's-kv-center-s64'
+db = 'PlanRC'
 sql = DBConnect(server, db)
 LastStateRole = QtCore.Qt.UserRole
 
@@ -81,11 +81,12 @@ class CubeRolesApp(QtWidgets.QMainWindow, Ui_MainWindow, PopupInfoWindows):
         self.setupUi(self)  # Это нужно для инициализации нашего дизайна
         self.setWindowIcon(QtGui.QIcon('resources/shopping.png'))
         self.userLogin = str
+        self.listCubes = dict
+        self.listActiveCubes = dict
 
         with sql:
             try:
                 self.users = dict(sql.get_users())
-                self.listCubes = dict(sql.get_list_cubes())
             except Exception as e:
                 writelog(e)
 
@@ -97,7 +98,8 @@ class CubeRolesApp(QtWidgets.QMainWindow, Ui_MainWindow, PopupInfoWindows):
 
         self.button_get_user_info.setEnabled(False)
         self.button_get_user_info.clicked.connect(self.get_user_info)
-        self.btn_add.clicked.connect(self.check_rows)
+        self.btn_add.clicked.connect(lambda:self.check_rows(1))
+        self.btn_remove.clicked.connect(lambda:self.check_rows(0))
 
     def on_text_changed(self):
         self.button_get_user_info.setEnabled(bool(self.input_search_user.text()))
@@ -112,41 +114,59 @@ class CubeRolesApp(QtWidgets.QMainWindow, Ui_MainWindow, PopupInfoWindows):
             checkbox_style = CheckBoxStyle(widget.style())
             widget.setStyle(checkbox_style)
 
-    def get_user_info(self, event):
+    def get_user_info(self):
         self.checkbox_styling()
         UserFullName = self.input_search_user.text()
         with sql:
-            self.insert_into(self.tableListCubes, self.listCubes, 60, 50, 350)
-            UserInfo = sql.get_user_info(UserFullName)
-            self.info_userLogin.setText(UserInfo[0])
-            self.info_userShortName.setText(UserInfo[1])
-            self.info_userPosition.setText(UserInfo[4])
-            self.info_userBusiness.setText(UserInfo[5])
-            self.info_userDepartment.setText(UserInfo[3])
-            self.userLogin = UserInfo[0]
+            userInfo = sql.get_user_info(UserFullName)
+            self.info_userLogin.setText(userInfo[0])
+            self.info_userShortName.setText(userInfo[1])
+            self.info_userPosition.setText(userInfo[4])
+            self.info_userBusiness.setText(userInfo[5])
+            self.info_userDepartment.setText(userInfo[3])
+            self.userLogin = userInfo[0]
 
-    # функция удаления филиалов из активного списка
-    def check_rows(self):
+            # build available cubes for user
+            self.listCubes = dict(sql.get_list_cubes(self.userLogin))
+            self.insert_into(self.tableListCubes, self.listCubes, 60, 50, 380)
+            # build only active cubes for user
+            self.listActiveCubes = dict(sql.get_list_active_cubes(self.userLogin))
+            self.insert_into(self.tableActiveListCubes, self.listActiveCubes, 60, 50, 350)
+
+    # функция работы с чекбоксами в списке
+    def check_rows(self, type):
         ID = []
-        countRows = len(self.listCubes)
-        for i in range(countRows):
-            checkboxItem = self.tableListCubes.item(i, 0)
-            currentState = checkboxItem.checkState()
-            if currentState == QtCore.Qt.Checked:
-                ID.append(self.tableListCubes.item(i, 1).text())
-        ListID = ', '.join(ID)
-        print(ListID)
-        if ListID is not None and len(ListID) != 0:
-            try:
-                with sql:
-                    status = sql.add_role(self.userLogin, ListID)
-                    if status[0] == 1:
+        listID = str
+        if type == 1:
+            countRows = len(self.listCubes)
+            for i in range(countRows):
+                checkboxItem = self.tableListCubes.item(i, 0)
+                currentState = checkboxItem.checkState()
+                if currentState == QtCore.Qt.Checked:
+                    ID.append(self.tableListCubes.item(i, 1).text())
+            listID = ', '.join(ID)
+        elif type == 0:
+            countRows = len(self.listActiveCubes)
+            for i in range(countRows):
+                checkboxItem = self.tableActiveListCubes.item(i, 0)
+                currentState = checkboxItem.checkState()
+                if currentState == QtCore.Qt.Checked:
+                    ID.append(self.tableActiveListCubes.item(i, 1).text())
+            listID = ', '.join(ID)
+        if listID is not None and len(listID) != 0:
+            with sql:
+                status = sql.add_roles_to_user(self.userLogin, listID, type)
+                if status[0] == 1:
+                    if type == 1:
+                        self.popup_add_role_succesfull()
+                    elif type == 0:
                         self.popup_remove_role_succesfull()
-                    elif status == 0:
+                elif status == 0:
+                    if type == 1:
+                        self.popup_add_error()
+                    elif type == 0:
                         self.popup_remove_error()
-                self.get_user_info()
-            except Exception as error:
-                writelog(error)
+            self.get_user_info()
 
 
     @staticmethod

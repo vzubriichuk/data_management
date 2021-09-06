@@ -130,7 +130,7 @@ class DBConnect(object):
             from [DBMS_S31].[MasterData].[dbo].[dim_Staff] s
             where 1=1
             and [cub.Staff.isWork] = 1
-            and [cub.Businesses.topLevelBusinessId] in ( 76,80,88,102,105,113,114,353,421  )
+            and [cub.Businesses.topLevelBusinessId] in ( 80  )
             and [cub.People.peopleLogin] is not NULL
         '''
         self.__cursor.execute(query)
@@ -138,27 +138,34 @@ class DBConnect(object):
 
     def get_user_info(self, UserName):
         query = '''
-            exec payment.admin_get_user_info @UserName = ?
+            exec reporting.proc_dm@get_user_info @UserName = ?
         '''
         self.__cursor.execute(query, UserName)
         return self.__cursor.fetchone()
 
-    def get_list_cubes(self):
+    def get_list_active_cubes(self, userLogin):
         query = '''
-            SELECT idParamsLines, ValueDescription
-            FROM  LogisticFinance.dbo.GlobalParamsLines
-            WHERE idParams = 14
+            exec [reporting].[proc_dm@get_active_cubes] @UserName = ?
         '''
-        self.__cursor.execute(query)
+        self.__cursor.execute(query, userLogin)
         return self.__cursor.fetchall()
 
-    def add_role(self, userLogin, cubeID):
+    def get_list_cubes(self, userLogin):
+        query = '''
+            exec [reporting].[proc_dm@get_available_cubes] @UserName = ?
+        '''
+        self.__cursor.execute(query, userLogin)
+        return self.__cursor.fetchall()
+
+    def add_roles_to_user(self, userLogin, cubeID, add_type):
         query = ''' 
-            exec reporting.md@cube_role_add @userLogin = ?,
-                                            @cubeID = ?
+            exec [reporting].[proc_dm@user_add_role] @userLogin = ?,
+                                                     @cubeID = ?,
+                                                     @add_type = ?
+                                            
         '''
         try:
-            self.__cursor.execute(query, userLogin, cubeID)
+            self.__cursor.execute(query, userLogin, cubeID, add_type)
             status = self.__cursor.fetchone()
             self.__db.commit()
             return status
